@@ -53,6 +53,11 @@ public class QuestionQueryRequest extends PageRequest implements Serializable {
     private String answer;
 
     /**
+     * 所属题库
+     */
+    private Long questionBankId;
+
+    /**
      * 创建用户 id
      */
     private Long userId;
