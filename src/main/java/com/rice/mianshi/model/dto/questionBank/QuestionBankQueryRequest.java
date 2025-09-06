@@ -28,6 +28,10 @@ public class QuestionBankQueryRequest extends PageRequest implements Serializabl
      */
     private String title;
 
+    /**
+     * 描述
+     */
+    private String description;
 
     /**
      * 创建用户 id

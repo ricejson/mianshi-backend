@@ -10,7 +10,6 @@ import com.rice.mianshi.constant.UserConstant;
 import com.rice.mianshi.exception.BusinessException;
 import com.rice.mianshi.exception.ThrowUtils;
 import com.rice.mianshi.model.dto.questionBank.QuestionBankAddRequest;
-import com.rice.mianshi.model.dto.questionBank.QuestionBankEditRequest;
 import com.rice.mianshi.model.dto.questionBank.QuestionBankQueryRequest;
 import com.rice.mianshi.model.dto.questionBank.QuestionBankUpdateRequest;
 import com.rice.mianshi.model.entity.QuestionBank;
@@ -45,13 +44,14 @@ public class QuestionBankController {
     // region 增删改查
 
     /**
-     * 创建题库
+     * 创建题库（仅允许管理员创建）
      *
      * @param questionBankAddRequest
      * @param request
      * @return
      */
     @PostMapping("/add")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Long> addQuestionBank(@RequestBody QuestionBankAddRequest questionBankAddRequest, HttpServletRequest request) {
         ThrowUtils.throwIf(questionBankAddRequest == null, ErrorCode.PARAMS_ERROR);
         // todo 在此处将实体类和 DTO 进行转换
@@ -71,26 +71,22 @@ public class QuestionBankController {
     }
 
     /**
-     * 删除题库
+     * 删除题库（仅允许管理员删除题库）
      *
      * @param deleteRequest
      * @param request
      * @return
      */
     @PostMapping("/delete")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
     public BaseResponse<Boolean> deleteQuestionBank(@RequestBody DeleteRequest deleteRequest, HttpServletRequest request) {
         if (deleteRequest == null || deleteRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        User user = userService.getLoginUser(request);
         long id = deleteRequest.getId();
         // 判断是否存在
         QuestionBank oldQuestionBank = questionBankService.getById(id);
         ThrowUtils.throwIf(oldQuestionBank == null, ErrorCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可删除
-        if (!oldQuestionBank.getUserId().equals(user.getId()) && !userService.isAdmin(request)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
         // 操作数据库
         boolean result = questionBankService.removeById(id);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
@@ -126,7 +122,7 @@ public class QuestionBankController {
 
     /**
      * 根据 id 获取题库（封装类）
-     *
+     * 获取题库详情
      * @param id
      * @return
      */
@@ -177,63 +173,5 @@ public class QuestionBankController {
         // 获取封装类
         return ResultUtils.success(questionBankService.getQuestionBankVOPage(questionBankPage, request));
     }
-
-    /**
-     * 分页获取当前登录用户创建的题库列表
-     *
-     * @param questionBankQueryRequest
-     * @param request
-     * @return
-     */
-    @PostMapping("/my/list/page/vo")
-    public BaseResponse<Page<QuestionBankVO>> listMyQuestionBankVOByPage(@RequestBody QuestionBankQueryRequest questionBankQueryRequest,
-                                                                 HttpServletRequest request) {
-        ThrowUtils.throwIf(questionBankQueryRequest == null, ErrorCode.PARAMS_ERROR);
-        // 补充查询条件，只查询当前登录用户的数据
-        User loginUser = userService.getLoginUser(request);
-        questionBankQueryRequest.setUserId(loginUser.getId());
-        long current = questionBankQueryRequest.getCurrent();
-        long size = questionBankQueryRequest.getPageSize();
-        // 限制爬虫
-        ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        // 查询数据库
-        Page<QuestionBank> questionBankPage = questionBankService.page(new Page<>(current, size),
-                questionBankService.getQueryWrapper(questionBankQueryRequest));
-        // 获取封装类
-        return ResultUtils.success(questionBankService.getQuestionBankVOPage(questionBankPage, request));
-    }
-
-    /**
-     * 编辑题库（给用户使用）
-     *
-     * @param questionBankEditRequest
-     * @param request
-     * @return
-     */
-    @PostMapping("/edit")
-    public BaseResponse<Boolean> editQuestionBank(@RequestBody QuestionBankEditRequest questionBankEditRequest, HttpServletRequest request) {
-        if (questionBankEditRequest == null || questionBankEditRequest.getId() <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        // todo 在此处将实体类和 DTO 进行转换
-        QuestionBank questionBank = new QuestionBank();
-        BeanUtils.copyProperties(questionBankEditRequest, questionBank);
-        // 数据校验
-        questionBankService.validQuestionBank(questionBank, false);
-        User loginUser = userService.getLoginUser(request);
-        // 判断是否存在
-        long id = questionBankEditRequest.getId();
-        QuestionBank oldQuestionBank = questionBankService.getById(id);
-        ThrowUtils.throwIf(oldQuestionBank == null, ErrorCode.NOT_FOUND_ERROR);
-        // 仅本人或管理员可编辑
-        if (!oldQuestionBank.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
-            throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
-        }
-        // 操作数据库
-        boolean result = questionBankService.updateById(questionBank);
-        ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        return ResultUtils.success(true);
-    }
-
     // endregion
 }

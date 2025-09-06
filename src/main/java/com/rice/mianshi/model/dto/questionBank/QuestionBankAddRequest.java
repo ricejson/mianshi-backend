@@ -30,15 +30,5 @@ public class QuestionBankAddRequest implements Serializable {
      */
     private String picture;
 
-    /**
-     * 创建用户 id
-     */
-    private Long userId;
-
-    /**
-     * 编辑时间
-     */
-    private Date editTime;
-
     private static final long serialVersionUID = 1L;
 }

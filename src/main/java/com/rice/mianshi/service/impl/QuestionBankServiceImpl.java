@@ -78,8 +78,8 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
             return queryWrapper;
         }
         // todo 从对象中取值
-        Long id = questionBankQueryRequest.getId();
         String title = questionBankQueryRequest.getTitle();
+        String description = questionBankQueryRequest.getDescription();
         String sortField = questionBankQueryRequest.getSortField();
         String sortOrder = questionBankQueryRequest.getSortOrder();
 
@@ -87,9 +87,9 @@ public class QuestionBankServiceImpl extends ServiceImpl<QuestionBankMapper, Que
         // todo 补充需要的查询条件
         // 模糊查询
         queryWrapper.like(StringUtils.isNotBlank(title), "title", title);
+        queryWrapper.like(StringUtils.isNotBlank(description), "description", description);
         // 精确查询
-        queryWrapper.eq(ObjectUtils.isNotEmpty(id), "id", id);
-        queryWrapper.eq(ObjectUtils.isNotEmpty(userId), "userId", userId);
+        queryWrapper.eq(ObjectUtils.isNotEmpty(userId) && userId != 0, "userId", userId);
         // 排序规则
         queryWrapper.orderBy(SqlUtils.validSortField(sortField),
                 sortOrder.equals(CommonConstant.SORT_ORDER_ASC),
