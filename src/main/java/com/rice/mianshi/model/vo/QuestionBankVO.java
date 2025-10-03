@@ -1,13 +1,11 @@
 package com.rice.mianshi.model.vo;
 
-import cn.hutool.json.JSONUtil;
 import com.rice.mianshi.model.entity.QuestionBank;
 import lombok.Data;
 import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
-import java.util.List;
 
 /**
  * 题库视图
@@ -29,14 +27,24 @@ public class QuestionBankVO implements Serializable {
     private String title;
 
     /**
-     * 内容
+     * 描述
      */
-    private String content;
+    private String description;
+
+    /**
+     * 图片
+     */
+    private String picture;
 
     /**
      * 创建用户 id
      */
     private Long userId;
+
+    /**
+     * 编辑时间
+     */
+    private Date editTime;
 
     /**
      * 创建时间
@@ -49,12 +57,7 @@ public class QuestionBankVO implements Serializable {
     private Date updateTime;
 
     /**
-     * 标签列表
-     */
-    private List<String> tagList;
-
-    /**
-     * 创建用户信息
+     * 关联用户
      */
     private UserVO user;
 
