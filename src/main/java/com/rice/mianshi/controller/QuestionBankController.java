@@ -1,5 +1,9 @@
 package com.rice.mianshi.controller;
 
+import cn.hutool.core.collection.CollUtil;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.rice.mianshi.annotation.AuthCheck;
 import com.rice.mianshi.common.BaseResponse;
@@ -12,10 +16,15 @@ import com.rice.mianshi.exception.ThrowUtils;
 import com.rice.mianshi.model.dto.questionBank.QuestionBankAddRequest;
 import com.rice.mianshi.model.dto.questionBank.QuestionBankQueryRequest;
 import com.rice.mianshi.model.dto.questionBank.QuestionBankUpdateRequest;
+import com.rice.mianshi.model.entity.Question;
 import com.rice.mianshi.model.entity.QuestionBank;
+import com.rice.mianshi.model.entity.QuestionBankQuestion;
 import com.rice.mianshi.model.entity.User;
 import com.rice.mianshi.model.vo.QuestionBankVO;
+import com.rice.mianshi.model.vo.QuestionVO;
+import com.rice.mianshi.service.QuestionBankQuestionService;
 import com.rice.mianshi.service.QuestionBankService;
+import com.rice.mianshi.service.QuestionService;
 import com.rice.mianshi.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
@@ -23,6 +32,9 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 题库接口
@@ -37,6 +49,11 @@ public class QuestionBankController {
 
     @Resource
     private QuestionBankService questionBankService;
+
+    @Resource
+    private QuestionBankQuestionService questionBankQuestionService;
+    @Resource
+    private QuestionService questionService;
 
     @Resource
     private UserService userService;
@@ -127,13 +144,32 @@ public class QuestionBankController {
      * @return
      */
     @GetMapping("/get/vo")
-    public BaseResponse<QuestionBankVO> getQuestionBankVOById(long id, HttpServletRequest request) {
+    public BaseResponse<QuestionBankVO> getQuestionBankVOById(long id, boolean needQueryQuestionList, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         // 查询数据库
         QuestionBank questionBank = questionBankService.getById(id);
         ThrowUtils.throwIf(questionBank == null, ErrorCode.NOT_FOUND_ERROR);
         // 获取封装类
-        return ResultUtils.success(questionBankService.getQuestionBankVO(questionBank, request));
+        QuestionBankVO bankVO = questionBankService.getQuestionBankVO(questionBank, request);
+        // 需要额外查询题目列表
+        if (needQueryQuestionList) {
+            QueryWrapper<Question> queryWrapper = new QueryWrapper<>();
+            Long questionBankId = bankVO.getId();
+            // 关联查询题目题库关联表
+            LambdaQueryWrapper<QuestionBankQuestion> lambdaQueryWrapper = Wrappers.lambdaQuery(QuestionBankQuestion.class)
+                    .select(QuestionBankQuestion::getQuestionId)
+                    .eq(QuestionBankQuestion::getQuestionBankId, questionBankId);
+            Set<Long> questionIdSet = questionBankQuestionService.list(lambdaQueryWrapper).stream()
+                    .map(QuestionBankQuestion::getQuestionId).collect(Collectors.toSet());
+            if (CollUtil.isNotEmpty(questionIdSet)) {
+                queryWrapper.in("id", questionIdSet);
+                List<QuestionVO> questions = questionService.list(queryWrapper)
+                        .stream().map((question) -> questionService.getQuestionVO(question, request))
+                        .collect(Collectors.toList());
+                bankVO.setQuestionList(questions);
+            }
+        }
+        return ResultUtils.success(bankVO);
     }
 
     /**

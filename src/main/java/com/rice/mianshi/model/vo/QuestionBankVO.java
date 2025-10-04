@@ -6,6 +6,7 @@ import org.springframework.beans.BeanUtils;
 
 import java.io.Serializable;
 import java.util.Date;
+import java.util.List;
 
 /**
  * 题库视图
@@ -60,6 +61,11 @@ public class QuestionBankVO implements Serializable {
      * 关联用户
      */
     private UserVO user;
+
+    /**
+     * 关联题目
+     */
+    private List<QuestionVO> questionList;
 
     /**
      * 封装类转对象
