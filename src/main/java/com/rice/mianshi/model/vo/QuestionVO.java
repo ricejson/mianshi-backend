@@ -33,6 +33,12 @@ public class QuestionVO implements Serializable {
      */
     private String content;
 
+
+    /**
+     * 内容
+     */
+    private String answer;
+
     /**
      * 创建用户 id
      */
