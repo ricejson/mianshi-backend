@@ -27,7 +27,7 @@ public class QuestionAddRequest implements Serializable {
     /**
      * 标签列表
      */
-    private List<String> tags;
+    private String tags;
 
     /**
      * 推荐答案

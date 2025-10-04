@@ -71,7 +71,8 @@ public class QuestionController {
         Question question = new Question();
         BeanUtils.copyProperties(questionAddRequest, question);
         // 处理标签
-        List<String> tagList = questionAddRequest.getTags();
+        String tags = questionAddRequest.getTags();
+        List<String> tagList = JSONUtil.toList(tags, String.class);
         if (CollUtil.isNotEmpty(tagList)) {
             String tagStr = JSONUtil.toJsonStr(tagList);
             question.setTags(tagStr);
