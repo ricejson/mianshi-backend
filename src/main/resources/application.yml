@@ -21,14 +21,9 @@ spring:
   # todo 需替换配置
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://dbconn.sealoshzh.site:48143/mianshi
+    url: jdbc:mysql://localhost:3306/mianshi
     username: root
-    password: 8n6b4zr9
-#  datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://localhost:3306/mianshi
-#    username: root
-#    password: QWEzxc123456
+    password: QWEzxc123456
   # Redis 配置
   # todo 需替换配置，然后取消注释
 #  redis:
