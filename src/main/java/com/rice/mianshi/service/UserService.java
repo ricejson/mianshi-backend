@@ -17,6 +17,22 @@ import java.util.List;
 * @createDate 2025-08-31 18:05:50
 */
 public interface UserService extends IService<User> {
+
+    /**
+     * 用户签到
+     * @param userId 用户id
+     * @return 是否签到成功
+     */
+    Boolean userSignIn(long userId);
+
+    /**
+     * 获取用户刷题数据
+     * @param userId 用户id
+     * @param year 年份
+     * @return 签到天数
+     */
+    List<Integer> getUserSignInDays(long userId, int year);
+
     /**
      * 用户注册
      *

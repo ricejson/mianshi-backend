@@ -8,6 +8,7 @@ import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.rice.mianshi.common.ErrorCode;
 import com.rice.mianshi.constant.CommonConstant;
+import com.rice.mianshi.constant.RedisConstant;
 import com.rice.mianshi.exception.BusinessException;
 import com.rice.mianshi.mapper.UserMapper;
 import com.rice.mianshi.model.dto.user.UserQueryRequest;
@@ -17,13 +18,17 @@ import com.rice.mianshi.model.vo.LoginUserVO;
 import com.rice.mianshi.model.vo.UserVO;
 import com.rice.mianshi.service.UserService;
 import com.rice.mianshi.utils.SqlUtils;
-import java.util.ArrayList;
-import java.util.List;
+
+import java.time.LocalDate;
+import java.util.*;
 import java.util.stream.Collectors;
+import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import me.chanjar.weixin.common.bean.WxOAuth2UserInfo;
 import org.apache.commons.lang3.StringUtils;
+import org.redisson.api.RBitSet;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.util.DigestUtils;
@@ -44,10 +49,47 @@ import static com.rice.mianshi.constant.UserConstant.USER_LOGIN_STATE;
 @Service
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
+
+    @Resource
+    private RedissonClient redissonClient;
+
     /**
      * 盐值，混淆密码
      */
     public static final String SALT = "ricejson";
+
+    @Override
+    public Boolean userSignIn(long userId) {
+        // 1. 获取到当天是几年的第几天
+        int offset = LocalDate.now().getDayOfYear();
+        // 2. 获取今天的年份
+        int year = LocalDate.now().getYear();
+        // 3. 获取用户签到key名称
+        String userSignInRedisKey = RedisConstant.getUserSignInRedisKey(userId, year);
+        // 4. 设置bitmap的值
+        RBitSet bitSet = redissonClient.getBitSet(userSignInRedisKey);
+        bitSet.set(offset, true);
+        return true;
+    }
+
+    @Override
+    public List<Integer> getUserSignInDays(long userId, int year) {
+        // 1. 获取redis的key
+        String userSignInRedisKey = RedisConstant.getUserSignInRedisKey(userId, year);
+        // 2. 获取bitset实例
+        RBitSet redisBitSet = redissonClient.getBitSet(userSignInRedisKey);
+        // 3. 切换为Java bitset
+        BitSet bitSet = redisBitSet.asBitSet();
+        // 4. 遍历年份获取每一天是否签到记录
+        List<Integer> signInDays = new ArrayList<>();
+        int days = LocalDate.ofYearDay(year, 1).lengthOfYear();
+        for (int offset = 1; offset <= days; offset++) {
+            if (bitSet.get(offset)) {
+                signInDays.add(offset);
+            }
+        }
+        return signInDays;
+    }
 
     @Override
     public long userRegister(String userAccount, String userPassword, String checkPassword) {
