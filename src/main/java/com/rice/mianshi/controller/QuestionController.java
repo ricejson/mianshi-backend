@@ -208,5 +208,18 @@ public class QuestionController {
         // 获取封装类
         return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }
+
+    /**
+     * 分页获取题目列表（es）
+     *
+     * @param questionQueryRequest
+     * @return
+     */
+    @PostMapping("/list/page/vo/es")
+    public BaseResponse<Page<QuestionVO>> listQuestionVOByPageEs(@RequestBody QuestionQueryRequest questionQueryRequest,
+                                                               HttpServletRequest request) {
+        // 获取封装类
+        return ResultUtils.success(questionService.getQuestionVOPage(questionService.searchFormEs(questionQueryRequest, request), request));
+    }
     // endregion
 }

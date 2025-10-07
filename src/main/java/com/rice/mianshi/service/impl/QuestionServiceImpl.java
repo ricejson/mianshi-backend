@@ -8,6 +8,7 @@ import com.rice.mianshi.common.ErrorCode;
 import com.rice.mianshi.constant.CommonConstant;
 import com.rice.mianshi.exception.ThrowUtils;
 import com.rice.mianshi.mapper.QuestionMapper;
+import com.rice.mianshi.model.dto.question.QuestionEsDTO;
 import com.rice.mianshi.model.dto.question.QuestionQueryRequest;
 import com.rice.mianshi.model.entity.Question;
 import com.rice.mianshi.model.entity.User;
@@ -19,14 +20,23 @@ import com.rice.mianshi.utils.SqlUtils;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.elasticsearch.index.query.BoolQueryBuilder;
+import org.elasticsearch.index.query.QueryBuilders;
+import org.elasticsearch.search.sort.ScoreSortBuilder;
+import org.elasticsearch.search.sort.SortBuilder;
+import org.elasticsearch.search.sort.SortBuilders;
+import org.elasticsearch.search.sort.SortOrder;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.elasticsearch.core.ElasticsearchRestTemplate;
+import org.springframework.data.elasticsearch.core.SearchHit;
+import org.springframework.data.elasticsearch.core.SearchHits;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQuery;
+import org.springframework.data.elasticsearch.core.query.NativeSearchQueryBuilder;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -41,6 +51,9 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Resource
     private UserService userService;
+
+    @Resource
+    private ElasticsearchRestTemplate elasticsearchRestTemplate;
 
     /**
      * 校验数据
@@ -184,6 +197,74 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
         questionVOPage.setRecords(questionVOList);
         return questionVOPage;
+    }
+
+    @Override
+    public Page<Question> searchFormEs(QuestionQueryRequest questionQueryRequest, HttpServletRequest request) {
+        // 1. 获取必要字段
+        Long id = questionQueryRequest.getId();
+        Long notId = questionQueryRequest.getNotId();
+        List<String> tags = questionQueryRequest.getTags();
+        String searchText = questionQueryRequest.getSearchText();
+        Long userId = questionQueryRequest.getUserId();
+        Long questionBankId = questionQueryRequest.getQuestionBankId();
+        int current = questionQueryRequest.getCurrent() - 1;
+        int pageSize = questionQueryRequest.getPageSize();
+        String sortField = questionQueryRequest.getSortField();
+        String sortOrder = questionQueryRequest.getSortOrder();
+        // 2. 过滤
+        BoolQueryBuilder boolQueryBuilder = QueryBuilders.boolQuery();
+        boolQueryBuilder.filter(QueryBuilders.termQuery("isDelete", 0));
+        if (id != null) {
+            boolQueryBuilder.filter(QueryBuilders.termQuery("id", id));
+        }
+        if (notId != null) {
+            boolQueryBuilder.mustNot(QueryBuilders.termQuery("id", notId));
+        }
+        if (userId != null) {
+            boolQueryBuilder.filter(QueryBuilders.termQuery("userId", userId));
+        }
+        if (questionBankId != null) {
+            boolQueryBuilder.filter(QueryBuilders.termQuery("questionBankId", questionBankId));
+        }
+        // 必须包含所有标签
+        if (CollUtil.isNotEmpty(tags)) {
+            for (String tag : tags) {
+                boolQueryBuilder.filter(QueryBuilders.termQuery("tags", tags));
+            }
+        }
+        // 关键词检索
+        if (StringUtils.isNotBlank(searchText)) {
+            boolQueryBuilder.should(QueryBuilders.matchQuery("title", searchText));
+            boolQueryBuilder.should(QueryBuilders.matchQuery("content", searchText));
+            boolQueryBuilder.should(QueryBuilders.matchQuery("answer", searchText));
+            boolQueryBuilder.minimumShouldMatch(1);
+        }
+        // 排序
+        SortBuilder<?> sortBuilder = SortBuilders.scoreSort();
+        if (StringUtils.isNotBlank(sortField)) {
+            sortBuilder = SortBuilders.fieldSort(sortField);
+            sortBuilder.order(CommonConstant.SORT_ORDER_ASC.equals(sortOrder) ? SortOrder.ASC : SortOrder.DESC);
+        }
+        // 分页
+        PageRequest pageRequest = PageRequest.of(current, pageSize);
+        NativeSearchQuery searchQuery = new NativeSearchQueryBuilder().
+                withQuery(boolQueryBuilder)
+                .withPageable(pageRequest)
+                .withSorts(sortBuilder)
+                .build();
+        SearchHits<QuestionEsDTO> search = elasticsearchRestTemplate.search(searchQuery, QuestionEsDTO.class);
+        Page<Question> questionPage = new Page<>();
+        questionPage.setTotal(search.getTotalHits());
+        List<Question> pageList = new ArrayList<>();
+        if (search.hasSearchHits()) {
+            List<SearchHit<QuestionEsDTO>> searchHits = search.getSearchHits();
+            for (SearchHit<QuestionEsDTO> searchHit : searchHits) {
+                pageList.add(QuestionEsDTO.dtoToObj(searchHit.getContent()));
+            }
+        }
+        questionPage.setRecords(pageList);
+        return questionPage;
     }
 
 }
