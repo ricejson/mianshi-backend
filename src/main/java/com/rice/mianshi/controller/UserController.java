@@ -59,6 +59,34 @@ public class UserController {
     @Resource
     private WxOpenConfig wxOpenConfig;
 
+    /**
+     * 用户签到
+     *
+     * @param
+     * @return
+     */
+    @PostMapping("/signin")
+    public BaseResponse<Boolean> userSignIn(HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+        // 获取签到结果
+        return ResultUtils.success(userService.userSignIn(loginUser.getId()));
+    }
+
+    /**
+     * 获取用户签到记录天数
+     *
+     * @param
+     * @return
+     */
+    @GetMapping("/getSignInDays")
+    public BaseResponse<List<Integer>> getUserSignInDaya(int year, HttpServletRequest request) {
+        User loginUser = userService.getLoginUser(request);
+        ThrowUtils.throwIf(loginUser == null, ErrorCode.NOT_LOGIN_ERROR);
+        // 获取用户签到天数
+        return ResultUtils.success(userService.getUserSignInDays(loginUser.getId(), year));
+    }
+
     // region 登录相关
 
     /**
