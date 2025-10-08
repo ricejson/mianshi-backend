@@ -100,4 +100,11 @@ knife4j:
       default:
         api-rule: package
         api-rule-resources:
-          - com.rice.mianshi.controller
+          - com.rice.mianshi.
+
+nacos:
+  config:
+    data-id: "mianshi"
+    group: "DEFAULT_GROUP"
+    server-addr: "localhost:8848"
+
