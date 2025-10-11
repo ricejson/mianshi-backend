@@ -16,7 +16,7 @@ import java.util.stream.Collectors;
  * 全量同步题目数据到es中
  * @author ricejson
  */
-//@Component
+@Component
 @Slf4j
 public class FullSyncQuestionToEs implements CommandLineRunner {
     @Resource
