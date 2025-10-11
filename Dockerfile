@@ -12,4 +12,4 @@ COPY src ./src
 RUN mvn package -DskipTests
 
 # Run the web service on container startup.
-CMD ["java","-jar","/app/target/mianshi-backend-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod"]
+CMD ["java","-jar","/app/target/mianshi-backend-0.0.1-SNAPSHOT.jar","--spring.profiles.active=prod","-Dcsp.sentinel.dashboard.server=62.234.138.98:8131"]

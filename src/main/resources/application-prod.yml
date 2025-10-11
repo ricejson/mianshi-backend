@@ -20,14 +20,14 @@ spring:
   # todo 需替换配置
   redis:
     database: 1
-    host: localhost
+    host: 62.234.138.98
     port: 6379
     timeout: 5000
     password: 123456
   # Elasticsearch 配置
   # todo 需替换配置
   elasticsearch:
-    uris: http://localhost:9200
+    uris: http://62.234.138.98:9200
     username: root
     password: 123456
 mybatis-plus:
@@ -40,3 +40,8 @@ knife4j:
     enable: true
     username: root
     password: 123456
+nacos:
+  config:
+    data-id: "mianshi"
+    group: "DEFAULT_GROUP"
+    server-addr: "62.234.138.98:8848"
