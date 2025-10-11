@@ -2,6 +2,12 @@ package com.rice.mianshi.controller;
 
 import cn.hutool.core.collection.CollUtil;
 import cn.hutool.json.JSONUtil;
+import com.alibaba.csp.sentinel.Entry;
+import com.alibaba.csp.sentinel.EntryType;
+import com.alibaba.csp.sentinel.SphU;
+import com.alibaba.csp.sentinel.Tracer;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -218,8 +224,31 @@ public class QuestionController {
     @PostMapping("/list/page/vo/es")
     public BaseResponse<Page<QuestionVO>> listQuestionVOByPageEs(@RequestBody QuestionQueryRequest questionQueryRequest,
                                                                HttpServletRequest request) {
+        Entry entry = null;
+        String ip = request.getRemoteAddr();
         // 获取封装类
-        return ResultUtils.success(questionService.getQuestionVOPage(questionService.searchFormEs(questionQueryRequest, request), request));
+        try {
+            entry = SphU.entry("listQuestionVOByPageEs", EntryType.IN, 1, ip);
+            return ResultUtils.success(questionService.getQuestionVOPage(questionService.searchFormEs(questionQueryRequest, request), request));
+        } catch (Throwable th) {
+            // 上报业务异常
+            if (!BlockException.isBlockException(th)) {
+                Tracer.trace(th);
+                // 处理降级
+                return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "系统错误！");
+            }
+            if (th instanceof DegradeException) {
+                // 处理降级
+                return ResultUtils.success(null);
+            }
+            // 处理限流
+            return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "访问过于频繁，请稍后再试！");
+
+        } finally {
+            if (entry != null) {
+                entry.exit(1, ip);
+            }
+        }
     }
     // endregion
 }

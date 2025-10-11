@@ -1,6 +1,9 @@
 package com.rice.mianshi.controller;
 
 import cn.hutool.core.collection.CollUtil;
+import com.alibaba.csp.sentinel.annotation.SentinelResource;
+import com.alibaba.csp.sentinel.slots.block.BlockException;
+import com.alibaba.csp.sentinel.slots.block.degrade.DegradeException;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
@@ -197,6 +200,10 @@ public class QuestionBankController {
      * @return
      */
     @PostMapping("/list/page/vo")
+    @SentinelResource(value = "listQuestionBankVOByPage",
+            blockHandler = "handleBlockException",
+            fallback = "handleFallBack"
+    )
     public BaseResponse<Page<QuestionBankVO>> listQuestionBankVOByPage(@RequestBody QuestionBankQueryRequest questionBankQueryRequest,
                                                                HttpServletRequest request) {
         long current = questionBankQueryRequest.getCurrent();
@@ -208,6 +215,35 @@ public class QuestionBankController {
                 questionBankService.getQueryWrapper(questionBankQueryRequest));
         // 获取封装类
         return ResultUtils.success(questionBankService.getQuestionBankVOPage(questionBankPage, request));
+    }
+
+    /**
+     * 处理限流和降级异常
+     * @param questionBankQueryRequest
+     * @param request
+     * @param blockException
+     * @return
+     */
+    public BaseResponse<Page<QuestionBankVO>> handleBlockException(@RequestBody QuestionBankQueryRequest questionBankQueryRequest,
+                                                                   HttpServletRequest request, BlockException blockException) {
+        if (blockException instanceof DegradeException) {
+            // 说明是熔断降级导致的
+            return handleFallBack(questionBankQueryRequest, request, blockException);
+        }
+        return ResultUtils.error(ErrorCode.SYSTEM_ERROR, "系统压力过大，请耐心等待！");
+    }
+
+    /**
+     * 降级逻辑
+     * @param questionBankQueryRequest
+     * @param request
+     * @param th
+     * @return
+     */
+    public BaseResponse<Page<QuestionBankVO>> handleFallBack(@RequestBody QuestionBankQueryRequest questionBankQueryRequest,
+                                                                   HttpServletRequest request, Throwable th) {
+        // 降级返回空数据
+        return ResultUtils.success(null);
     }
     // endregion
 }
