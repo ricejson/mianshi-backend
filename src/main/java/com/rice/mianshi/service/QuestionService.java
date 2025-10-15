@@ -18,6 +18,12 @@ import javax.servlet.http.HttpServletRequest;
 public interface QuestionService extends IService<Question> {
 
     /**
+     * 爬虫检测
+     * @param userId
+     */
+    void crawlerDetect(long userId);
+
+    /**
      * 校验数据
      *
      * @param question

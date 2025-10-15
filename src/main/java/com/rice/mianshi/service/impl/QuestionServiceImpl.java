@@ -1,12 +1,17 @@
 package com.rice.mianshi.service.impl;
 
+import cn.dev33.satoken.stp.StpUtil;
 import cn.hutool.core.collection.CollUtil;
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.rice.mianshi.common.ErrorCode;
 import com.rice.mianshi.constant.CommonConstant;
+import com.rice.mianshi.constant.RedisConstant;
+import com.rice.mianshi.constant.UserConstant;
+import com.rice.mianshi.exception.BusinessException;
 import com.rice.mianshi.exception.ThrowUtils;
+import com.rice.mianshi.manager.CounterManager;
 import com.rice.mianshi.mapper.QuestionMapper;
 import com.rice.mianshi.model.dto.question.QuestionEsDTO;
 import com.rice.mianshi.model.dto.question.QuestionQueryRequest;
@@ -54,6 +59,31 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
 
     @Resource
     private ElasticsearchRestTemplate elasticsearchRestTemplate;
+
+    @Resource
+    private CounterManager counterManager;
+
+    @Override
+    public void crawlerDetect(long userId) {
+        // 构建redis_key_prefix
+        String keyPrefix = RedisConstant.getUserAccessRedisKey(userId);
+        int count = counterManager.incrAndGetCounter(keyPrefix);
+        final int WARN_COUNT = 10;
+        final int BAN_COUNT = 20;
+        if (count == WARN_COUNT) {
+            // TODO: 触发报警
+            throw new BusinessException(110, "警告，访问太频繁！");
+
+        } else if (count > BAN_COUNT) {
+            // 触发封禁
+            StpUtil.kickout(userId);
+            User updateUser = new User();
+            updateUser.setId(userId);
+            updateUser.setUserRole(UserConstant.BAN_ROLE);
+            userService.updateById(updateUser);
+            throw new BusinessException(ErrorCode.NO_AUTH_ERROR, "访问太频繁，已被封号！");
+        }
+    }
 
     /**
      * 校验数据
