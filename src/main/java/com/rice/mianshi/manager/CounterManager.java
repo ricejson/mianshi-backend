@@ -29,7 +29,7 @@ public class CounterManager {
      * @param key
      * @return
      */
-    public int incrAndGetCounter(String key) {
+    public long incrAndGetCounter(String key) {
         return incrAndGetCounter(key, 1, TimeUnit.MINUTES);
     }
 
@@ -40,7 +40,7 @@ public class CounterManager {
      * @param timeUnit 时间单位
      * @return
      */
-    public int incrAndGetCounter(String key, int interval, TimeUnit timeUnit) {
+    public long incrAndGetCounter(String key, int interval, TimeUnit timeUnit) {
         // 获取过期时间
         int expireTimeInSeconds;
         switch (timeUnit) {
@@ -71,7 +71,7 @@ public class CounterManager {
      * @param expireTime 过期时间(秒数)
      * @return
      */
-    public int incrAndGetCounter(String key, int interval, TimeUnit timeUnit, int expireTime) {
+    public long incrAndGetCounter(String key, int interval, TimeUnit timeUnit, int expireTime) {
         if (StringUtils.isBlank(key)) {
             return 0;
         }

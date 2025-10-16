@@ -67,7 +67,7 @@ public class QuestionServiceImpl extends ServiceImpl<QuestionMapper, Question> i
     public void crawlerDetect(long userId) {
         // 构建redis_key_prefix
         String keyPrefix = RedisConstant.getUserAccessRedisKey(userId);
-        int count = counterManager.incrAndGetCounter(keyPrefix);
+        long count = counterManager.incrAndGetCounter(keyPrefix);
         final int WARN_COUNT = 10;
         final int BAN_COUNT = 20;
         if (count == WARN_COUNT) {
