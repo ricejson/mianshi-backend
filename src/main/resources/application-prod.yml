@@ -3,6 +3,7 @@
 # @from <a href="https://ricejson.icu">编程导航知识星球</a>
 server:
   port: 8101
+spring:
   # 数据库配置
   # todo 需替换配置
   datasource:
@@ -17,13 +18,12 @@ server:
 #    password: 123456
   # Redis 配置
   # todo 需替换配置
-  data:
-    redis:
-      database: 1
-      host: 62.234.138.98
-      port: 6379
-      timeout: 5000
-      password: ~RICEjson666
+  redis:
+    database: 1
+    host: 62.234.138.98
+    port: 6379
+    timeout: 5000
+    password: ~RICEjson666
   # Elasticsearch 配置
   # todo 需替换配置
   elasticsearch:
@@ -45,3 +45,4 @@ nacos:
     data-id: "mianshi"
     group: "DEFAULT_GROUP"
     server-addr: "62.234.138.98:8848"
+
