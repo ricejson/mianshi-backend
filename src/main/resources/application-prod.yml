@@ -4,6 +4,9 @@
 server:
   port: 8101
 spring:
+  session:
+    redis:
+      configure-action: none
   # 数据库配置
   # todo 需替换配置
   datasource:
