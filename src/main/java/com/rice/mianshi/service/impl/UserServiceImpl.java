@@ -49,6 +49,7 @@ import static com.rice.mianshi.constant.UserConstant.USER_LOGIN_STATE;
 * @createDate 2025-08-31 18:05:50
 */
 @Service
+@Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, User>
     implements UserService{
 
@@ -160,6 +161,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User>
         StpUtil.login(user.getId(), DeviceUtils.getUserLoginDevice(request));
         // 缓存用户信息
         StpUtil.getSession().set(USER_LOGIN_STATE, user);
+        // 登录成功后
+        log.info("当前 token: {}", StpUtil.getTokenValue());
+        log.info("当前登录 ID: {}", StpUtil.getLoginId());
         return this.getLoginUserVO(user);
     }
 
