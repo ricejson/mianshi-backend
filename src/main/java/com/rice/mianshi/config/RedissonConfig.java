@@ -19,6 +19,7 @@ import org.springframework.context.annotation.Configuration;
 public class RedissonConfig {
     private String host;
     private String port;
+    private String username;
     private String password;
     private Integer database;
 
@@ -28,6 +29,7 @@ public class RedissonConfig {
         config.useSingleServer() // 单节点
                 .setAddress("redis://" + host + ":" + port)
                 .setDatabase(database)
+                .setUsername(username)
                 .setPassword(password); // 设置密码
         return Redisson.create(config);
     }
