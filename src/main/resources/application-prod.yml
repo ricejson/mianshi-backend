@@ -65,7 +65,8 @@ sa-token:
   # 是否输出操作日志
   is-log: true
   cookie:
-    path: /api
+    path: /           # ← 关键！改为根路径
     same-site: none
+    secure: true      # ← 必须加！
 
 
