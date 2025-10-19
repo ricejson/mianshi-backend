@@ -158,13 +158,19 @@ public class QuestionController {
     public BaseResponse<QuestionVO> getQuestionVOById(long id, HttpServletRequest request) {
         ThrowUtils.throwIf(id <= 0, ErrorCode.PARAMS_ERROR);
         // 查询数据库
-        User loginUser = userService.getLoginUser(request);
-        // 爬虫检测
-        questionService.crawlerDetect(loginUser.getId());
         Question question = questionService.getById(id);
         ThrowUtils.throwIf(question == null, ErrorCode.NOT_FOUND_ERROR);
+        User loginUser = userService.getLoginUserPermitNull(request);
+        QuestionVO questionVO = questionService.getQuestionVO(question, request);
+        if (loginUser != null) {
+            // 爬虫检测
+            questionService.crawlerDetect(loginUser.getId());
+        } else {
+            // 不设置推荐答案
+            questionVO.setAnswer("");
+        }
         // 获取封装类
-        return ResultUtils.success(questionService.getQuestionVO(question, request));
+        return ResultUtils.success(questionVO);
     }
 
     /**
