@@ -29,7 +29,6 @@ public class RedissonConfig {
         config.useSingleServer() // 单节点
                 .setAddress("redis://" + host + ":" + port)
                 .setDatabase(database)
-                .setUsername(username)
                 .setPassword(password); // 设置密码
         return Redisson.create(config);
     }
